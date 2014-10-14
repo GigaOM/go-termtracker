@@ -1,0 +1,14 @@
+.post-type-go-termtracker #postbox-container-1 {
+	display: none;
+}
+
+.column-go-termtracker_terms span {
+	border: 1px solid #ccc;
+	background-color: #eee;
+	border-radius: 3px;
+	padding: 0px 2px;
+}
+
+.type-go-termtracker td.column-go-termtracker_terms {
+	line-height: 1.8em;
+}
