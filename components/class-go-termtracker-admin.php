@@ -4,6 +4,9 @@
 */
 class GO_Term_Tracker_Admin
 {
+	public $popular_terms_to_show = 20;
+	private $show_popular = FALSE;
+
 	public function __construct()
 	{
 		// change the columns shown in the dashboard list of posts
@@ -13,6 +16,9 @@ class GO_Term_Tracker_Admin
 
 		// add any CSS needed for the dashboard
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+
+		// if the go-popular plugin exists, enable additional "popular" data about terms
+		$this->show_popular = function_exists( 'go_popular' );
 	}//END __construct
 
 	/**
@@ -29,7 +35,17 @@ class GO_Term_Tracker_Admin
 	 */
 	public function metaboxes()
 	{
+		if ( ! class_exists( 'GO_Term_Tracker_Table' ) )
+		{
+			require( __DIR__ . '/class-go-termtracker-table.php' );
+		}//end if
+
 		add_meta_box( $this->get_field_id( 'terms' ), 'Terms', array( $this, 'metabox_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
+
+		if ( $this->show_popular )
+		{
+			add_meta_box( $this->get_field_id( 'go-popular' ), 'Top ' . absint( $this->popular_terms_to_show ) . ' Popular Terms', array( $this, 'metabox_popular_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
+		}//end if
 	}//END metaboxes
 
 	/**
@@ -37,22 +53,35 @@ class GO_Term_Tracker_Admin
 	 */
 	public function metabox_terms( $post )
 	{
-		$terms = wp_get_object_terms( $post->ID, go_termtracker()->config( 'taxonomies_to_track' ) );
+		$terms = $this->get_terms( $post );
 
-		if ( ! class_exists( 'GO_Term_Tracker_Table' ) )
-		{
-			require( __DIR__ . '/class-go-termtracker-table.php' );
-		}//end if
 		$table = new GO_Term_Tracker_Table;
 		$table->prepare_items( $terms );
 		$table->display();
 	}//END metabox_terms
 
 	/**
+	 * Get the popular terms for this post and pass it to a list table view
+	 */
+	public function metabox_popular_terms( $post )
+	{
+		$terms = $this->get_popular_terms( $post );
+
+		$table = new GO_Term_Tracker_Table;
+		$table->prepare_items( $terms );
+		$table->display();
+	}//END metabox_popular_terms
+
+	/**
 	 * hooked to the manage_%POSTTYPE_posts_custom_column action
 	 */
 	public function column( $column, $post_id )
 	{
+		if ( 'go-popular' == $column && $this->show_popular )
+		{
+			echo $this->column_go_popular( $post_id );
+		}//end if
+
 		if ( $this->column_name() != $column )
 		{
 			return;
@@ -74,6 +103,11 @@ class GO_Term_Tracker_Admin
 			$this->column_name() => 'Terms',
 		);
 
+		if ( $this->show_popular )
+		{
+			$columns['go-popular'] = 'Top ' . absint( $this->popular_terms_to_show ) . ' Popular Terms';
+		}//end if
+
 		return $columns;
 	}//END columns
 
@@ -82,11 +116,44 @@ class GO_Term_Tracker_Admin
 		return go_termtracker()->id_base . '_terms';
 	}// end column_name
 
+	private function get_terms( $post )
+	{
+		if ( ! is_object( $post ) )
+		{
+			$post = get_post( $post );
+		}//end if
+
+		return wp_get_object_terms( $post->ID, go_termtracker()->config( 'taxonomies_to_track' ) );
+	}//end get_terms
+
 	private function column_terms( $post_id )
 	{
-		$terms = wp_get_object_terms( $post_id, go_termtracker()->config( 'taxonomies_to_track' ) );
+		$terms = $this->get_terms( $post_id );
 		return $this->get_admin_dashboard_terms( $terms );
 	}//END column_terms
+
+	private function column_go_popular( $post_id )
+	{
+		$terms = $this->get_popular_terms( $post_id );
+		echo $this->get_admin_dashboard_terms( $terms );
+	}//end column_go_popular
+
+	private function get_popular_terms( $post )
+	{
+		if ( ! is_object( $post ) )
+		{
+			$post = get_post( $post );
+		}//end if
+
+		$args = array(
+			'count' => absint( $this->popular_terms_to_show ),
+		);
+
+		$args['from'] = date( 'Y-m-d', strtotime( $post->post_date ) );
+		$args['to'] = $args['from'] . ' 23:59:59';
+
+		return go_popular()->get_popular_terms(  go_termtracker()->config( 'taxonomies_to_track' ), $args );
+	}//end get_popular_terms
 
 	/**
 	 * generate simple comma-separated list
