@@ -4,7 +4,6 @@
 */
 class GO_Term_Tracker_Admin
 {
-	public $popular_terms_to_show = 20;
 	private $show_popular = FALSE;
 
 	public function __construct()
@@ -40,11 +39,11 @@ class GO_Term_Tracker_Admin
 			require( __DIR__ . '/class-go-termtracker-table.php' );
 		}//end if
 
-		add_meta_box( $this->get_field_id( 'terms' ), 'Terms', array( $this, 'metabox_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
+		add_meta_box( $this->get_field_id( 'terms' ), 'New Terms', array( $this, 'metabox_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
 
 		if ( $this->show_popular )
 		{
-			add_meta_box( $this->get_field_id( 'go-popular' ), 'Top ' . absint( $this->popular_terms_to_show ) . ' Popular Terms', array( $this, 'metabox_popular_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
+			add_meta_box( $this->get_field_id( 'popular' ), 'Popular Terms', array( $this, 'metabox_popular_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
 		}//end if
 	}//END metaboxes
 
@@ -68,6 +67,11 @@ class GO_Term_Tracker_Admin
 		$terms = $this->get_popular_terms( $post );
 
 		$table = new GO_Term_Tracker_Table;
+
+		$table->columns['popularity'] = 'Popularity';
+		$table->default_order_by = 'popularity';
+		$table->default_order = 'desc';
+
 		$table->prepare_items( $terms );
 		$table->display();
 	}//END metabox_popular_terms
@@ -77,18 +81,19 @@ class GO_Term_Tracker_Admin
 	 */
 	public function column( $column, $post_id )
 	{
-		if ( 'go-popular' == $column && $this->show_popular )
+		if ( $this->column_name( 'popular' ) == $column && $this->show_popular )
 		{
-			echo $this->column_go_popular( $post_id );
-		}//end if
-
-		if ( $this->column_name() != $column )
-		{
+			// escaped upstream, contains HTML
+			$this->column_popular( $post_id );
 			return;
 		}//end if
 
-		// escaped upstream, contains HTML
-		echo $this->column_terms( $post_id );
+		if ( $this->column_name( 'terms' ) == $column )
+		{
+			// escaped upstream, contains HTML
+			$this->column_terms( $post_id );
+			return;
+		}//end if
 	}//END column
 
 	/**
@@ -100,20 +105,20 @@ class GO_Term_Tracker_Admin
 		$columns = array(
 			'cb' => $columns['cb'],
 			'title' => $columns['title'],
-			$this->column_name() => 'Terms',
+			$this->column_name( 'terms' ) => 'New Terms',
 		);
 
 		if ( $this->show_popular )
 		{
-			$columns['go-popular'] = 'Top ' . absint( $this->popular_terms_to_show ) . ' Popular Terms';
+			$columns[ $this->column_name( 'popular' ) ] = 'Popular Terms';
 		}//end if
 
 		return $columns;
 	}//END columns
 
-	private function column_name()
+	private function column_name( $column )
 	{
-		return go_termtracker()->id_base . '_terms';
+		return go_termtracker()->id_base . '_' . $column;
 	}// end column_name
 
 	private function get_terms( $post )
@@ -129,10 +134,10 @@ class GO_Term_Tracker_Admin
 	private function column_terms( $post_id )
 	{
 		$terms = $this->get_terms( $post_id );
-		return $this->get_admin_dashboard_terms( $terms );
+		echo $this->get_admin_dashboard_terms( $terms );
 	}//END column_terms
 
-	private function column_go_popular( $post_id )
+	private function column_popular( $post_id )
 	{
 		$terms = $this->get_popular_terms( $post_id );
 		echo $this->get_admin_dashboard_terms( $terms );
@@ -146,7 +151,7 @@ class GO_Term_Tracker_Admin
 		}//end if
 
 		$args = array(
-			'count' => absint( $this->popular_terms_to_show ),
+			'count' => -1,
 		);
 
 		$args['from'] = date( 'Y-m-d', strtotime( $post->post_date ) );

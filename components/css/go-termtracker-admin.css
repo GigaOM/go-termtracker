@@ -3,7 +3,7 @@
 }
 
 .column-go-termtracker_terms span,
-.column-go-popular span {
+.column-go-termtracker_popular span {
 	border: 1px solid #ccc;
 	background-color: #eee;
 	border-radius: 3px;
@@ -11,6 +11,6 @@
 }
 
 .type-go-termtracker td.column-go-termtracker_terms,
-.type-go-termtracker td.column-go-popular {
+.type-go-termtracker td.column-go-termtracker_popular {
 	line-height: 1.8em;
 }
