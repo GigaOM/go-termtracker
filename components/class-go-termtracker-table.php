@@ -2,6 +2,16 @@
 
 class GO_Term_Tracker_Table extends WP_List_Table
 {
+	public $columns = array(
+		'name'     => 'Name',
+		'slug'     => 'Slug',
+		'taxonomy' => 'Taxonomy',
+		'count'    => 'Posts',
+	);
+
+	public $default_order_by = 'name';
+	public $default_order = 'asc';
+
 	public function __construct()
 	{
 		parent::__construct( array(
@@ -11,8 +21,13 @@ class GO_Term_Tracker_Table extends WP_List_Table
 		) );
 	}//end __construct
 
-	public function column_default( $item, $unused_column_name )
+	public function column_default( $item, $column_name )
 	{
+		if ( isset( $item->$column_name ) )
+		{
+			return $item->$column_name;
+		}//end if
+
 		return print_r( $item, TRUE );
 	}//END column_default
 
@@ -23,30 +38,9 @@ class GO_Term_Tracker_Table extends WP_List_Table
 		return '<a href="' . esc_url( admin_url( $location ) ) . '">' . esc_html( $item->name ) . '</a>';
 	}//END column_name
 
-	public function column_slug( $item )
-	{
-		return $item->slug;
-	}//END column_slug
-
-	public function column_taxonomy( $item )
-	{
-		return $item->taxonomy;
-	}//END column_taxonomy
-
-	public function column_count( $item )
-	{
-		return $item->count;
-	}//END column_count
-
 	public function get_columns()
 	{
-		$columns = array(
-			'name'     => 'Name',
-			'slug'     => 'Slug',
-			'taxonomy' => 'Taxonomy',
-			'count'    => 'Posts',
-		);
-		return $columns;
+		return $this->columns;
 	}//END get_columns
 
 	public function get_sortable_columns()
@@ -78,14 +72,21 @@ class GO_Term_Tracker_Table extends WP_List_Table
 	public function usort_reorder( $a, $b )
 	{
 		// If no sort, default to name
-		$orderby = empty( $_GET['orderby'] ) ? 'name' : $_GET['orderby'];
-		$orderby = isset( $a->$orderby ) ? $orderby : 'name';
+		$orderby = empty( $_GET['orderby'] ) ? $this->default_order_by : $_GET['orderby'];
+		$orderby = isset( $a->$orderby ) ? $orderby : $this->default_order_by;
 
 		// If no order, default to asc
-		$order = empty( $_GET['order'] ) ? 'asc' : $_GET['order'];
+		$order = empty( $_GET['order'] ) ? $this->default_order : $_GET['order'];
 
 		// Determine sort order
-		$result = strcmp( $a->$orderby, $b->$orderby );
+		if ( is_numeric( $a->$orderby ) )
+		{
+			$result = $a->$orderby < $b->$orderby ? -1 : 1;
+		}//end if
+		else
+		{
+			$result = strcasecmp( $a->$orderby, $b->$orderby );
+		}//end else
 
 		// Send final sort direction to usort
 		return ( $order === 'asc' ) ? $result : -$result;

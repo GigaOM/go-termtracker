@@ -2,13 +2,15 @@
 	display: none;
 }
 
-.column-go-termtracker_terms span {
+.column-go-termtracker_terms span,
+.column-go-termtracker_popular span {
 	border: 1px solid #ccc;
 	background-color: #eee;
 	border-radius: 3px;
 	padding: 0px 2px;
 }
 
-.type-go-termtracker td.column-go-termtracker_terms {
+.type-go-termtracker td.column-go-termtracker_terms,
+.type-go-termtracker td.column-go-termtracker_popular {
 	line-height: 1.8em;
 }
