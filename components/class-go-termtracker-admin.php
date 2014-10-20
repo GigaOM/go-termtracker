@@ -92,7 +92,7 @@ class GO_Term_Tracker_Admin
 
 		$table->prepare_items( $terms );
 		$table->display();
-	}//END metabox_popular_terms
+	}//END metabox_emergent_terms
 
 	/**
 	 * hooked to the manage_%POSTTYPE_posts_custom_column action
@@ -167,13 +167,13 @@ class GO_Term_Tracker_Admin
 	{
 		$terms = $this->get_popular_terms( $post_id );
 		echo $this->get_admin_dashboard_terms( $terms );
-	}//end column_go_popular
+	}//end column_popular
 
 	private function column_emergent( $post_id )
 	{
 		$terms = $this->get_emergent_terms( $post_id );
 		echo $this->get_admin_dashboard_terms( $terms );
-	}//end column_go_popular
+	}//end column_emergent
 
 	private function get_popular_terms( $post )
 	{
