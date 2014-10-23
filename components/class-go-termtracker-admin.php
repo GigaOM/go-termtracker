@@ -44,6 +44,7 @@ class GO_Term_Tracker_Admin
 		if ( $this->show_popular )
 		{
 			add_meta_box( $this->get_field_id( 'popular' ), 'Popular Terms', array( $this, 'metabox_popular_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
+			add_meta_box( $this->get_field_id( 'emergent' ), 'Emergent Terms', array( $this, 'metabox_emergent_terms' ), go_termtracker()->post_type_name, 'normal', 'default' );
 		}//end if
 	}//END metaboxes
 
@@ -77,6 +78,23 @@ class GO_Term_Tracker_Admin
 	}//END metabox_popular_terms
 
 	/**
+	 * Get the emergent terms for this post and pass it to a list table view
+	 */
+	public function metabox_emergent_terms( $post )
+	{
+		$terms = $this->get_emergent_terms( $post );
+
+		$table = new GO_Term_Tracker_Table;
+
+		$table->columns['emergent_score'] = 'Emergent Score';
+		$table->default_order_by = 'emergent_score';
+		$table->default_order = 'desc';
+
+		$table->prepare_items( $terms );
+		$table->display();
+	}//END metabox_emergent_terms
+
+	/**
 	 * hooked to the manage_%POSTTYPE_posts_custom_column action
 	 */
 	public function column( $column, $post_id )
@@ -85,6 +103,13 @@ class GO_Term_Tracker_Admin
 		{
 			// escaped upstream, contains HTML
 			$this->column_popular( $post_id );
+			return;
+		}//end if
+
+		if ( $this->column_name( 'emergent' ) == $column && $this->show_popular )
+		{
+			// escaped upstream, contains HTML
+			$this->column_emergent( $post_id );
 			return;
 		}//end if
 
@@ -111,6 +136,7 @@ class GO_Term_Tracker_Admin
 		if ( $this->show_popular )
 		{
 			$columns[ $this->column_name( 'popular' ) ] = 'Popular Terms';
+			$columns[ $this->column_name( 'emergent' ) ] = 'Emergent Terms';
 		}//end if
 
 		return $columns;
@@ -141,7 +167,13 @@ class GO_Term_Tracker_Admin
 	{
 		$terms = $this->get_popular_terms( $post_id );
 		echo $this->get_admin_dashboard_terms( $terms );
-	}//end column_go_popular
+	}//end column_popular
+
+	private function column_emergent( $post_id )
+	{
+		$terms = $this->get_emergent_terms( $post_id );
+		echo $this->get_admin_dashboard_terms( $terms );
+	}//end column_emergent
 
 	private function get_popular_terms( $post )
 	{
@@ -159,6 +191,23 @@ class GO_Term_Tracker_Admin
 
 		return go_popular()->get_popular_terms(  go_termtracker()->config( 'taxonomies_to_track' ), $args );
 	}//end get_popular_terms
+
+	private function get_emergent_terms( $post )
+	{
+		if ( ! is_object( $post ) )
+		{
+			$post = get_post( $post );
+		}//end if
+
+		$args = array(
+			'count' => -1,
+		);
+
+		$args['from'] = date( 'Y-m-d', strtotime( $post->post_date ) );
+		$args['to'] = $args['from'] . ' 23:59:59';
+
+		return go_popular()->get_emergent_terms(  go_termtracker()->config( 'taxonomies_to_track' ), $args );
+	}//end get_emergent_terms
 
 	/**
 	 * generate simple comma-separated list

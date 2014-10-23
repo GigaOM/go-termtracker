@@ -3,6 +3,7 @@
 }
 
 .column-go-termtracker_terms span,
+.column-go-termtracker_emergent span,
 .column-go-termtracker_popular span {
 	border: 1px solid #ccc;
 	background-color: #eee;
@@ -11,6 +12,11 @@
 }
 
 .type-go-termtracker td.column-go-termtracker_terms,
+.type-go-termtracker td.column-go-termtracker_emergent,
 .type-go-termtracker td.column-go-termtracker_popular {
 	line-height: 1.8em;
+}
+
+#title {
+	width:170px;
 }
